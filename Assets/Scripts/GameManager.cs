@@ -19,10 +19,13 @@ public class GameManager : MonoBehaviour
         }
         else { Destroy(this); }
 
-        undoButton.onClick.AddListener(() => { 
-            Command lastCommand = commandStack.Pop();
-            lastCommand.Undo();
-            redoStack.Push(lastCommand);
+        undoButton.onClick.AddListener(() => {
+            if (commandStack.Count > 0)
+            {
+                Command lastCommand = commandStack.Pop();
+                lastCommand.Undo();
+                redoStack.Push(lastCommand);
+            }
         });
     }
 }
