@@ -61,6 +61,3 @@ public class MoveRight : Command
     }
 }
 
-public class DoNothing : Command
-{
-}

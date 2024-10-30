@@ -4,43 +4,60 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    //public Command wCommand = new MoveForward();
-    //public Command aCommand = new MoveLeft();
-    //public Command sCommand = new MoveBackward();
-    //public Command dCommand = new MoveRight();
-    //public Command doNothingCommand = new DoNothing();
-    // Start is called before the first frame update
+    [SerializeField] MoveCommand WKey, AKey, SKey, DKey;
+    enum MoveCommand
+    {
+        MoveForward,
+        MoveBackward,
+        MoveLeft,
+        MoveRight,
+    }
+
+    Dictionary<KeyCode, MoveCommand> keyToCommand;
     void Start()
     {
-        
+        keyToCommand = new Dictionary<KeyCode, MoveCommand>
+        {
+            { KeyCode.W, WKey },
+            { KeyCode.A, AKey },
+            { KeyCode.S, SKey },
+            { KeyCode.D, DKey },
+        };
+        GameManager.instance.playerStartPos = transform.position;
+        GameManager.instance.playerStartRota = transform.rotation;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.W))
+        if (Input.GetKeyDown(KeyCode.Z)) { GameManager.instance.UndoProcedure(); }
+        if (Input.GetKeyDown(KeyCode.X) || Input.GetKeyDown(KeyCode.Y)) { GameManager.instance.RedoProcedure(); }
+
+        foreach (var entry in keyToCommand)
         {
-            Command wCommand = new MoveForward();
-            wCommand.Execute(this.transform);
-            GameManager.instance.commandStack.Push(wCommand);
+            if (Input.GetKeyDown(entry.Key))
+            {
+                GameManager.instance.redoStack.Clear();
+                ExecuteCommand(entry.Value);
+            }
         }
-        if (Input.GetKeyDown(KeyCode.A))
+    }
+
+    void ExecuteCommand(MoveCommand commandType)
+    {
+        Command command = commandType switch
         {
-            Command aCommand = new MoveLeft();
-            aCommand.Execute(this.transform);
-            GameManager.instance.commandStack.Push(aCommand);
-        }
-        if (Input.GetKeyDown(KeyCode.S))
+            MoveCommand.MoveForward => new MoveForward(),
+            MoveCommand.MoveBackward => new MoveBackward(),
+            MoveCommand.MoveLeft => new MoveLeft(),
+            MoveCommand.MoveRight => new MoveRight(),
+            _ => null
+        };
+
+        if (command != null) 
         {
-            Command sCommand = new MoveBackward();
-            sCommand.Execute(this.transform);
-            GameManager.instance.commandStack.Push(sCommand);
-        }
-        if (Input.GetKeyDown(KeyCode.D))
-        {
-            Command dCommand = new MoveRight();
-            dCommand.Execute(this.transform);
-            GameManager.instance.commandStack.Push(dCommand);
+            command.Execute(transform);
+            GameManager.instance.commandStack.Push(command);
         }
     }
 }
