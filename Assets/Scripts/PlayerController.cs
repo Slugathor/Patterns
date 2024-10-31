@@ -1,9 +1,12 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    [SerializeField]private int coinAmount =0;
+    event Action onCoinCollected;
     [SerializeField] MoveCommand WKey, AKey, SKey, DKey;
     enum MoveCommand
     {
@@ -16,6 +19,8 @@ public class PlayerController : MonoBehaviour
     Dictionary<KeyCode, MoveCommand> keyToCommand;
     void Start()
     {
+        CoinManager.instance.CoinCollected += OnCoinCollected;
+
         keyToCommand = new Dictionary<KeyCode, MoveCommand>
         {
             { KeyCode.W, WKey },
@@ -59,5 +64,15 @@ public class PlayerController : MonoBehaviour
             command.Execute(transform);
             GameManager.instance.commandStack.Push(command);
         }
+    }
+
+    void OnCoinCollected()
+    {
+        AddCoin();
+    }
+
+    void AddCoin(int amount = 1)
+    {
+        coinAmount+=amount;
     }
 }
