@@ -5,7 +5,7 @@ using System;
 public class CoinManager : MonoBehaviour
 {
     public static CoinManager instance;
-    public event Action CoinCollected;
+    public event Action<int> CoinCollected;
 
     private void Awake()
     {
@@ -14,8 +14,8 @@ public class CoinManager : MonoBehaviour
         else Destroy(this);
     }
 
-    public void CollectCoin()
+    public void CollectCoin(int coinValue)
     {
-        CoinCollected?.Invoke();
+        CoinCollected?.Invoke(coinValue);
     }
 }

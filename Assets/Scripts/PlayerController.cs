@@ -6,7 +6,7 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField]private int coinAmount =0;
-    event Action onCoinCollected;
+
     [SerializeField] MoveCommand WKey, AKey, SKey, DKey;
     enum MoveCommand
     {
@@ -66,9 +66,9 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    void OnCoinCollected()
+    void OnCoinCollected(int coinValue)
     {
-        AddCoin();
+        AddCoin(coinValue);
     }
 
     void AddCoin(int amount = 1)

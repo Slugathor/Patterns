@@ -9,6 +9,7 @@ public class CoinScript : MonoBehaviour
     [SerializeField] float spinspeedDegPerSec = 90;
     Vector3 startPos;
     bool movingup=true;
+    public int value = 1;
     [SerializeField] float upDownMoveSpeed = 10;
     [SerializeField] float upDownMaxDist = 2;
 
@@ -37,10 +38,10 @@ public class CoinScript : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log("collision");
+        //Debug.Log("collision");
         if(other.tag == "Player")
         {
-            CoinManager.instance.CollectCoin();
+            CoinManager.instance.CollectCoin(value);
             Destroy(gameObject);
         }
     }
