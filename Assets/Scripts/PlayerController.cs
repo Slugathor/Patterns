@@ -6,6 +6,8 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField]private int coinAmount =0;
+    private Vector3 playerPosStart;
+    public event Action<float> PlayerMoved;
 
     [SerializeField] MoveCommand WKey, AKey, SKey, DKey;
     enum MoveCommand
@@ -35,6 +37,18 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(Input.GetKeyDown(KeyCode.P)) 
+        {
+            foreach(var ach in AchievementSystem.instance.Achievements) 
+            {
+                string no = ach.complete ? "" : "Not ";
+                Debug.Log(ach.name + " : " + no+"Completed.\n");
+            } 
+        }
+
+        // save player pos at the start of the frame
+        playerPosStart = transform.position;
+
         if (Input.GetKeyDown(KeyCode.Z)) { GameManager.instance.UndoProcedure(); }
         if (Input.GetKeyDown(KeyCode.X) || Input.GetKeyDown(KeyCode.Y)) { GameManager.instance.RedoProcedure(); }
 
@@ -45,6 +59,14 @@ public class PlayerController : MonoBehaviour
                 GameManager.instance.redoStack.Clear();
                 ExecuteCommand(entry.Value);
             }
+        }
+
+        // if player moved during the frame, calculate the distance travelled and raise event PlayerMoved
+        if(playerPosStart != transform.position) 
+        {
+            float distMoved = Math.Abs((playerPosStart - transform.position).magnitude);
+            //Debug.Log("Distance moved this frame: "+distMoved.ToString());
+            PlayerMoved?.Invoke(distMoved);
         }
     }
 

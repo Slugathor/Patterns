@@ -6,11 +6,14 @@ using UnityEngine;
 public class Spawner : MonoBehaviour
 {
     [SerializeField] GameObject coinPrefab;
-    [SerializeField] int coinAmount = 50;
+    [SerializeField] GameObject platCoinPrefab;
+    [SerializeField] int goldCoinAmount = 100;
+    [SerializeField] int platCoinAmount = 30;
     // Start is called before the first frame update
     void Start()
     {
-        Spawn(coinPrefab, coinAmount);
+        Spawn(coinPrefab, goldCoinAmount);
+        Spawn(platCoinPrefab, platCoinAmount);
     }
 
     // Update is called once per frame

@@ -11,14 +11,32 @@ public class AchievementSystem : MonoBehaviour
     // creates a public readonly version Achievements, which only has a getter that returns achievements
     public IReadOnlyList<Achievement> Achievements => achievements;
 
+    /// <summary>
+    /// String represents a prefix to the achievement name and int the amount of coins to collect.
+    /// The rest of the achievement name is Coin Collector.
+    /// </summary>
     private List<(string, int)> CoinAchievements = new List<(string,int)>() {
         ("Beginner ", 1),
-        ("Novice ",5),
-        ("Aspiring ",10),
-        ("Dedicated ",20),
-        ("Insane ",30),
+        ("Novice ",10),
+        ("Aspiring ",25),
+        ("Dedicated ",50),
+        ("Insane ",100),
         ("Diabolical ",666) 
     };
+    /// <summary>
+    /// String represents a prefix to the achievement name and float the distance required to travel.
+    /// The rest of the achievement name is Traveller.
+    /// </summary>
+    private List<(string, float)> DistanceWalkedAchievements = new List<(string,float)>() {
+        ("Newbie ", 10),
+        ("Sunday ",20),
+        ("Inspired ",50),
+        ("Sore-foot ",100),
+        ("Tireless ",1000),
+        ("Demonic ",666.666f) 
+    };
+
+
 
     [SerializeField]private int totalCoinsCollected;
     [SerializeField] private float distanceWalked;
@@ -33,23 +51,37 @@ public class AchievementSystem : MonoBehaviour
     private void Start()
     {
         CoinManager.instance.CoinCollected += UpdateCoinsCollected;
+        GameObject.FindGameObjectWithTag("Player").GetComponentInParent<PlayerController>().PlayerMoved += OnPlayerMoved;
 
-        // create all 
+        // create all coin achievements
         foreach ((string,int) tuple in CoinAchievements)
         {
             CreateCoinCollectingAchievement(tuple.Item1, totalCoinsCollected, tuple.Item2);
         }
+        
+        // create all distance walked achievements
+        foreach ((string,float) tuple in DistanceWalkedAchievements)
+        {
+            CreateDistanceWalkedAchievement(tuple.Item1, totalCoinsCollected, tuple.Item2);
+        }
+
+
     }
     void UpdateCoinsCollected(int coinValue)
     {
-        totalCoinsCollected += coinValue;
+        totalCoinsCollected += coinValue; // don't confuse this to be an event subscription event, it's just incrementing an int
     }
+    void OnPlayerMoved(float dist)
+    {
+        distanceWalked += dist;
+    }
+  
 
     public class Achievement
     {
         public string name;
         public bool complete { get; private set; } = false;
-        public string achievementType; // "coinAchievement" is an example of a type, it means that
+        public string achievementType; // "coinAchievement" is an example of a type, it means that the achievement's progress is tracked as coins collected
 
         public Achievement(string _name, string _achievementType)
         {
@@ -60,7 +92,15 @@ public class AchievementSystem : MonoBehaviour
         protected void Complete()
         {
             complete = true;
-            Debug.Log("You've earned the achievement: " + this.name);
+            
+            string additionalLine = this.achievementType switch
+            {
+                "coinAchievement" => $"Collected {((CountableAchievement<int>)this).target} coins.\n",
+                "distanceWalkedAchievement" => $"Travelled {((CountableAchievement<float>)this).target} metres by foot.\n",
+                _ => ""
+            };
+
+            Debug.Log("You've earned the achievement: " + this.name + "\n"+additionalLine);
         }
     }
     /// <summary>
@@ -150,6 +190,14 @@ public class AchievementSystem : MonoBehaviour
         var coinAch = new CountableAchievement<int>(_namePrefix + "Coin Collector", achType, _currentCoins, _targetCoins);
         achievements.Add(coinAch);
         CoinManager.instance.CoinCollected += coinAch.IncrementBy;
+    }
+    private void CreateDistanceWalkedAchievement(string _namePrefix, float _currentDist, float _targetDist)
+    {
+        string achType = "distanceWalkedAchievement";
+        
+        var distAch = new CountableAchievement<float>(_namePrefix + "Traveller", achType, _currentDist, _targetDist);
+        achievements.Add(distAch);
+        GameObject.FindGameObjectWithTag("Player").GetComponentInParent<PlayerController>().PlayerMoved += distAch.IncrementBy;
     }
 
     /// <summary>
