@@ -7,7 +7,7 @@ public class PlayerController : MonoBehaviour
 {
     [SerializeField]private int coinAmount =0;
     private Vector3 playerPosStart;
-    public event Action<float> PlayerMoved;
+    public static event Action<float> PlayerMoved;
 
     [SerializeField] MoveCommand WKey, AKey, SKey, DKey;
     enum MoveCommand
@@ -39,11 +39,7 @@ public class PlayerController : MonoBehaviour
     {
         if(Input.GetKeyDown(KeyCode.P)) 
         {
-            foreach(var ach in AchievementSystem.instance.Achievements) 
-            {
-                string no = ach.complete ? "" : "Not ";
-                Debug.Log(ach.name + " : " + no+"Completed.\n");
-            } 
+            HelperFunctions.PrintAchievements();
         }
 
         // save player pos at the start of the frame
@@ -97,4 +93,5 @@ public class PlayerController : MonoBehaviour
     {
         coinAmount+=amount;
     }
+
 }

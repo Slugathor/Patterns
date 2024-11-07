@@ -4,9 +4,8 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class GameManager : MonoBehaviour
+public class GameManager : GenericSingleton<GameManager>
 {
-    public static GameManager instance;
     public GameObject player;
     public Vector3 playerStartPos;
     public Quaternion playerStartRota;
@@ -14,15 +13,9 @@ public class GameManager : MonoBehaviour
     public Stack<Command> redoStack = new Stack<Command>();
     public Stack<Command> replayStack;
     [SerializeField] Button undoButton, redoButton, replayButton;
-    private void Awake()
+    protected override void Awake()
     {
-        #region singletonStuff
-        if (instance == null)
-        {
-            instance = this;
-        }
-        else { Destroy(this); }
-        #endregion
+        base.Awake();
         undoButton.onClick.AddListener(() => UndoProcedure());
         redoButton.onClick.AddListener(() => RedoProcedure());
         replayButton.onClick.AddListener(() => StartCoroutine(Replay()));

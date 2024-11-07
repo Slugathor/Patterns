@@ -2,11 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
+using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
+using static HelperFunctions;
 
-public class AchievementSystem : MonoBehaviour
+public class AchievementSystem : GenericSingleton<AchievementSystem>
 {
-    public static AchievementSystem instance;
     private readonly List<Achievement> achievements = new List<Achievement>();
     // creates a public readonly version Achievements, which only has a getter that returns achievements
     public IReadOnlyList<Achievement> Achievements => achievements;
@@ -21,7 +22,8 @@ public class AchievementSystem : MonoBehaviour
         ("Aspiring ",25),
         ("Dedicated ",50),
         ("Insane ",100),
-        ("Diabolical ",666) 
+        ("Diabolical ",666),
+        ("Herpaderp", 10000000)
     };
     /// <summary>
     /// String represents a prefix to the achievement name and float the distance required to travel.
@@ -41,17 +43,10 @@ public class AchievementSystem : MonoBehaviour
     [SerializeField]private int totalCoinsCollected;
     [SerializeField] private float distanceWalked;
 
-
-    private void Awake()
-    {
-        if(instance == null) { instance = this; }
-        else { Destroy(this); }
-
-    }
     private void Start()
     {
         CoinManager.instance.CoinCollected += UpdateCoinsCollected;
-        GameObject.FindGameObjectWithTag("Player").GetComponentInParent<PlayerController>().PlayerMoved += OnPlayerMoved;
+        PlayerController.PlayerMoved += OnPlayerMoved;
 
         // create all coin achievements
         foreach ((string,int) tuple in CoinAchievements)
@@ -107,7 +102,7 @@ public class AchievementSystem : MonoBehaviour
     /// Achievements that require some numeric value to be reached in order to unlock. Such as collect 10 coins, kill 50 enemies or walk 100 000km.
     /// </summary>
     /// <typeparam name="T">has to be IComparable and a numeric.</typeparam>
-    internal class CountableAchievement<T> : Achievement where T : IComparable<T>
+    internal class CountableAchievement<T> : Achievement where T : IComparable<T>, IEquatable<T>, IConvertible
     {
         public T value; // numeric type current value
         public T target; // numeric type target to earn achievement
@@ -133,7 +128,7 @@ public class AchievementSystem : MonoBehaviour
         internal void IncrementBy(T amount)
         {
             // checks if value and amount are numerics
-            if (AchievementSystem.instance.IsSupportedNumeric(value) && AchievementSystem.instance.IsSupportedNumeric(amount))
+            if (IsSupportedNumeric(value) && IsSupportedNumeric(amount))
             {
                 // int
                 if (typeof(T) == typeof(int))
@@ -197,23 +192,6 @@ public class AchievementSystem : MonoBehaviour
         
         var distAch = new CountableAchievement<float>(_namePrefix + "Traveller", achType, _currentDist, _targetDist);
         achievements.Add(distAch);
-        GameObject.FindGameObjectWithTag("Player").GetComponentInParent<PlayerController>().PlayerMoved += distAch.IncrementBy;
-    }
-
-    /// <summary>
-    /// Checks if given <paramref name="value"/> is a supported numeric.
-    /// </summary>
-    /// <param name="value"></param>
-    /// <returns>True if <paramref name="value"/> is <see cref="int"/>, <see cref="uint"/>, <see cref="long"/>, <see cref="ulong"/>, <see cref="float"/>, <see cref="double"/> or <see cref="BigInteger"/>.</returns>
-    private bool IsSupportedNumeric(object value)
-    {
-        return
-            value is int
-            || value is uint
-            || value is long
-            || value is ulong
-            || value is float
-            || value is double
-            || value is BigInteger;
+        PlayerController.PlayerMoved += distAch.IncrementBy;
     }
 }
