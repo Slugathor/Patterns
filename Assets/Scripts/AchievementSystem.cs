@@ -17,13 +17,13 @@ public class AchievementSystem : GenericSingleton<AchievementSystem>
     /// The rest of the achievement name is Coin Collector.
     /// </summary>
     private List<(string, int)> CoinAchievements = new List<(string,int)>() {
-        ("Beginner ", 1),
-        ("Novice ",10),
-        ("Aspiring ",25),
-        ("Dedicated ",50),
-        ("Insane ",100),
+        ("Beginner ", 10),
+        ("Novice ",25),
+        ("Aspiring ",50),
+        ("Dedicated ",100),
+        ("Insane ",500),
         ("Diabolical ",666),
-        ("Herpaderp", 10000000)
+        ("Unbelievable ", 10000000)
     };
     /// <summary>
     /// String represents a prefix to the achievement name and float the distance required to travel.
@@ -31,7 +31,7 @@ public class AchievementSystem : GenericSingleton<AchievementSystem>
     /// </summary>
     private List<(string, float)> DistanceWalkedAchievements = new List<(string,float)>() {
         ("Newbie ", 10),
-        ("Sunday ",20),
+        ("Sunday ",25),
         ("Inspired ",50),
         ("Sore-foot ",100),
         ("Tireless ",1000),
@@ -41,7 +41,13 @@ public class AchievementSystem : GenericSingleton<AchievementSystem>
 
 
     [SerializeField]private int totalCoinsCollected;
+    [SerializeField] internal AudioClip achievementUnlockSound;
     [SerializeField] private float distanceWalked;
+
+    private void OnDisable()
+    {
+        Dispose();
+    }
 
     private void Start()
     {
@@ -57,7 +63,7 @@ public class AchievementSystem : GenericSingleton<AchievementSystem>
         // create all distance walked achievements
         foreach ((string,float) tuple in DistanceWalkedAchievements)
         {
-            CreateDistanceWalkedAchievement(tuple.Item1, totalCoinsCollected, tuple.Item2);
+            CreateDistanceWalkedAchievement(tuple.Item1, distanceWalked, tuple.Item2);
         }
 
 
@@ -96,6 +102,7 @@ public class AchievementSystem : GenericSingleton<AchievementSystem>
             };
 
             Debug.Log("You've earned the achievement: " + this.name + "\n"+additionalLine);
+            AudioManager.instance.GetComponent<AudioSource>().PlayOneShot(instance.achievementUnlockSound);
         }
     }
     /// <summary>
@@ -193,5 +200,30 @@ public class AchievementSystem : GenericSingleton<AchievementSystem>
         var distAch = new CountableAchievement<float>(_namePrefix + "Traveller", achType, _currentDist, _targetDist);
         achievements.Add(distAch);
         PlayerController.PlayerMoved += distAch.IncrementBy;
+    }
+
+    // Had to add this to unsub from the above ^^
+    public void Dispose() // Unsubscribe from collect events to prevent multiple achievements being tracked
+    {
+        foreach (var ach in achievements)
+        {
+            switch (ach)
+            {
+                case CountableAchievement<int> countableInt:
+                    CoinManager.instance.CoinCollected -= countableInt.IncrementBy;
+                    break;
+                case CountableAchievement<float> countableFloat:
+                    PlayerController.PlayerMoved -= countableFloat.IncrementBy;
+                    break;
+
+                case CountableAchievement<uint> countableUint:
+                    
+                    break;
+                case CountableAchievement<double> countableDouble:
+                    
+                    break;
+                    // Add other types here as needed
+            }
+        }
     }
 }
