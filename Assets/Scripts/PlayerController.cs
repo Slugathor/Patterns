@@ -1,11 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField]private int coinAmount =0;
+    [SerializeField] private int coinAmount = 0;
     private Vector3 playerPosStart;
     public static event Action<float> PlayerMoved;
 
@@ -37,11 +38,37 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(Input.GetKeyDown(KeyCode.P)) 
+
+        // Inputs that work both while paused and while playing
+        if (Input.GetKeyDown(KeyCode.T)) // Print achievements0
         {
             HelperFunctions.PrintAchievements();
         }
+        if (Input.GetKeyDown(KeyCode.Escape)) // Go to main menu
+        {
+            MenuManager.GoToMainMenu();
+        }
+        if (Input.GetKeyDown(KeyCode.P)) // Pause toggle
+        {
+            MenuManager.TogglePauseGame();
+        }
+        // GAMESTATE PLAYING
+        if (GameManager.gameState == GameState.PLAYING)
+        {
+            HandlePlayingInputs();
 
+            // if player moved during the frame, calculate the distance travelled and raise event PlayerMoved
+            if (playerPosStart != transform.position)
+            {
+                float distMoved = Math.Abs((playerPosStart - transform.position).magnitude);
+                //Debug.Log("Distance moved this frame: "+distMoved.ToString());
+                PlayerMoved?.Invoke(distMoved);
+            }
+        }
+    }
+
+    void HandlePlayingInputs() 
+    {
         // save player pos at the start of the frame
         playerPosStart = transform.position;
 
@@ -55,14 +82,6 @@ public class PlayerController : MonoBehaviour
                 GameManager.instance.redoStack.Clear();
                 ExecuteCommand(entry.Value);
             }
-        }
-
-        // if player moved during the frame, calculate the distance travelled and raise event PlayerMoved
-        if(playerPosStart != transform.position) 
-        {
-            float distMoved = Math.Abs((playerPosStart - transform.position).magnitude);
-            //Debug.Log("Distance moved this frame: "+distMoved.ToString());
-            PlayerMoved?.Invoke(distMoved);
         }
     }
 

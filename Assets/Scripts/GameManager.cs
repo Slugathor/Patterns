@@ -4,6 +4,14 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
 
+public enum GameState
+{
+    MENU,
+    PLAYING,
+    PAUSED,
+    GAMEOVER
+}
+
 public class GameManager : GenericSingleton<GameManager>
 {
     public GameObject player;
@@ -13,6 +21,9 @@ public class GameManager : GenericSingleton<GameManager>
     public Stack<Command> redoStack = new Stack<Command>();
     public Stack<Command> replayStack;
     [SerializeField] Button undoButton, redoButton, replayButton;
+
+    public static GameState gameState = 0;
+
     protected override void Awake()
     {
         base.Awake();
@@ -52,7 +63,7 @@ public class GameManager : GenericSingleton<GameManager>
                 replayStack.Push(commandStack.Pop());
             }
 
-            while(replayStack.Count > 0)
+            while (replayStack.Count > 0)
             {
                 ReplayMove();
                 yield return new WaitForSeconds(0.2f);
