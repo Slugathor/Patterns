@@ -11,9 +11,12 @@ public class PlayerController : MonoBehaviour
     public static event Action<float> PlayerMoved;
     PlayerState playerState = PlayerState.STANDING;
     float speed = 1; // default movement speed
-
-    [SerializeField] MoveCommand WKey, AKey, SKey, DKey;
-    enum MoveCommand
+    float jumpForceMultiplier = 1;
+    bool doubleJumped=false;
+    Rigidbody rigidbody;
+    PlayerState stateLastFrame;
+    public MoveCommand WKey, AKey, SKey, DKey;
+    public enum MoveCommand
     {
         MoveForward,
         MoveBackward,
@@ -25,18 +28,19 @@ public class PlayerController : MonoBehaviour
     {
         STANDING=0,
         CROUCHING,
-        
+        IN_AIR
     }
 
-    Dictionary<KeyCode, MoveCommand> keyToCommand;
+    public Dictionary<KeyCode, MoveCommand> keyToCommand;
     void Start()
     {
         CoinManager.instance.CoinCollected += OnCoinCollected;
+        rigidbody = GetComponent<Rigidbody>();
 
         keyToCommand = new Dictionary<KeyCode, MoveCommand>
         {
-            { KeyCode.W, WKey },
-            { KeyCode.A, AKey },
+            { KeyCode.W, WKey }, // WKey is an enum variable "MoveCommand" exposed to the editor. This lets one change the functionality of the w key
+            { KeyCode.A, AKey }, // the shroom swaps these around 
             { KeyCode.S, SKey },
             { KeyCode.D, DKey },
         };
@@ -47,9 +51,14 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (stateLastFrame != playerState)
+        {
+            Debug.Log(playerState.ToString());
+            stateLastFrame = playerState;
+        }
 
         // Inputs that work both while paused and while playing
-        if (Input.GetKeyDown(KeyCode.T)) // Print achievements0
+        if (Input.GetKeyDown(KeyCode.T)) // Print achievements
         {
             HelperFunctions.PrintAchievements();
         }
@@ -64,7 +73,7 @@ public class PlayerController : MonoBehaviour
         // GAMESTATE PLAYING
         if (GameManager.gameState == GameState.PLAYING)
         {
-            HandlePlayingInputs();
+            HandlePlayingInputs(); // Movement and other player controls
 
             // if player moved during the frame, calculate the distance travelled and raise event PlayerMoved
             if (playerPosStart != transform.position)
@@ -72,6 +81,7 @@ public class PlayerController : MonoBehaviour
                 float distMoved = Math.Abs((playerPosStart - transform.position).magnitude);
                 //Debug.Log("Distance moved this frame: "+distMoved.ToString());
                 PlayerMoved?.Invoke(distMoved);
+                playerPosStart = transform.position;
             }
         }
     }
@@ -82,32 +92,54 @@ public class PlayerController : MonoBehaviour
         {
             case PlayerState.STANDING:
                 speed = 1;
-                if (Input.GetKeyDown(KeyCode.C))
+                jumpForceMultiplier = 1;
+                if (Input.GetKey(KeyCode.C))
                 {
                     Crouch();
                 }
+                HandleMovementCommands();
                 break;
             case PlayerState.CROUCHING:
                 speed = 0.5f;
+                jumpForceMultiplier = 1.5f;
                 if (Input.GetKeyUp(KeyCode.C))
                 {
                     StandUp();
                 }
+                HandleMovementCommands();
+                break;
+            case PlayerState.IN_AIR:
+                speed = 0;
+                HandleMovementCommands();
                 break;
         }
 
+        
+    }
+
+    void HandleMovementCommands()
+    {
         // save player pos at the start of the frame
         playerPosStart = transform.position;
 
         if (Input.GetKeyDown(KeyCode.Z)) { GameManager.instance.UndoProcedure(); }
         if (Input.GetKeyDown(KeyCode.X) || Input.GetKeyDown(KeyCode.Y)) { GameManager.instance.RedoProcedure(); }
+        if (Input.GetKeyDown(KeyCode.Space) && !doubleJumped) 
+        {
+            if (playerState == PlayerState.IN_AIR)
+            {
+                doubleJumped = true;
+            }
+            Jump();
+            return;
+        }
 
         foreach (var entry in keyToCommand)
         {
             if (Input.GetKeyDown(entry.Key))
             {
                 GameManager.instance.redoStack.Clear();
-                
+
                 ExecuteCommand(entry.Value, speed);
             }
         }
@@ -117,16 +149,16 @@ public class PlayerController : MonoBehaviour
     {
         Command command = commandType switch
         {
-            MoveCommand.MoveForward => new MoveForward(),
-            MoveCommand.MoveBackward => new MoveBackward(),
-            MoveCommand.MoveLeft => new MoveLeft(),
-            MoveCommand.MoveRight => new MoveRight(),
+            MoveCommand.MoveForward => new MoveForward(_speed),
+            MoveCommand.MoveBackward => new MoveBackward(_speed),
+            MoveCommand.MoveLeft => new MoveLeft(_speed),
+            MoveCommand.MoveRight => new MoveRight(_speed),
             _ => null
         };
 
         if (command != null) 
         {
-            command.Execute(transform, _speed);
+            command.Execute(transform);
             GameManager.instance.commandStack.Push(command);
         }
     }
@@ -140,6 +172,27 @@ public class PlayerController : MonoBehaviour
     {
         transform.localScale = new Vector3(1, 1, 1);
         playerState = PlayerState.STANDING;
+    }
+
+    void Jump()
+    {
+        Debug.Log("JumpForceMultiplier: " + jumpForceMultiplier);
+        rigidbody.AddForce(transform.up * jumpForceMultiplier* 5, ForceMode.Impulse);
+        transform.localScale = new Vector3(1, 1, 1);
+        playerState =PlayerState.IN_AIR;
+        jumpForceMultiplier = 0.75f;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if(playerState == PlayerState.IN_AIR)
+        {
+            if(collision.collider.tag == "Ground" ||  collision.collider.tag == "Floor")
+            {
+                doubleJumped = false;
+                StandUp();
+            }
+        }
     }
 
     void OnCoinCollected(int coinValue)

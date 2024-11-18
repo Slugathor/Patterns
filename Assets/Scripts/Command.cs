@@ -9,12 +9,16 @@ public abstract class Command
     protected Quaternion lastRota;
     protected Vector3 lastPos;
     protected float speed = 1;
-    public virtual void Execute(Transform _transform, float _speed = 1f) 
+
+    public Command(float _speed=1)
+    {
+        speed = _speed;
+    }
+    public virtual void Execute(Transform _transform) 
     {
         player = _transform;
         lastRota = _transform.rotation;
         lastPos = _transform.position;
-        speed = _speed;
     }
     public virtual void Undo()
     {
@@ -25,9 +29,14 @@ public abstract class Command
 
 public class MoveForward : Command
 {
-    public override void Execute(Transform _transform, float _speed = 1f)
+    public MoveForward(float _speed=1) : base(_speed) // <--- added float speed parameter to all move commands, because crouching slows speed to half
+    { 
+        speed = _speed; 
+    }
+
+    public override void Execute(Transform _transform)
     {
-        base.Execute(_transform, _speed);
+        base.Execute(_transform);
         _transform.rotation = Quaternion.Euler(0, 0, 0);
         _transform.position += Vector3.forward * speed;
     }
@@ -35,9 +44,14 @@ public class MoveForward : Command
 
 public class MoveBackward : Command
 {
-    public override void Execute(Transform _transform, float _speed = 1f)
+    public MoveBackward(float _speed = 1) : base(_speed)
     {
-        base.Execute(_transform, _speed);
+        speed = _speed;
+    }
+
+    public override void Execute(Transform _transform)
+    {
+        base.Execute(_transform);
         _transform.rotation = Quaternion.Euler(0, 180, 0);
         _transform.position += Vector3.back * speed;
     }
@@ -45,9 +59,14 @@ public class MoveBackward : Command
 
 public class MoveLeft : Command
 {
-    public override void Execute(Transform _transform, float _speed = 1f)
+    public MoveLeft(float _speed = 1) : base(_speed)
     {
-        base.Execute(_transform, _speed);
+        speed = _speed;
+    }
+
+    public override void Execute(Transform _transform)
+    {
+        base.Execute(_transform);
         _transform.rotation = Quaternion.Euler(0, -90, 0);
         _transform.position += Vector3.left * speed;
     }
@@ -55,9 +74,14 @@ public class MoveLeft : Command
 
 public class MoveRight : Command
 {
-    public override void Execute(Transform _transform, float _speed = 1f)
+    public MoveRight(float _speed = 1) : base(_speed)
     {
-        base.Execute(_transform, _speed);
+        speed = _speed;
+    }
+
+    public override void Execute(Transform _transform)
+    {
+        base.Execute(_transform);
         _transform.rotation = Quaternion.Euler(0, 90, 0);
         _transform.position += Vector3.right * speed;
     }
