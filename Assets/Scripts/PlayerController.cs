@@ -9,6 +9,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private int coinAmount = 0;
     private Vector3 playerPosStart;
     public static event Action<float> PlayerMoved;
+    PlayerState playerState = PlayerState.STANDING;
+    float speed = 1; // default movement speed
 
     [SerializeField] MoveCommand WKey, AKey, SKey, DKey;
     enum MoveCommand
@@ -17,6 +19,13 @@ public class PlayerController : MonoBehaviour
         MoveBackward,
         MoveLeft,
         MoveRight,
+    }
+
+    enum PlayerState
+    {
+        STANDING=0,
+        CROUCHING,
+        
     }
 
     Dictionary<KeyCode, MoveCommand> keyToCommand;
@@ -69,6 +78,24 @@ public class PlayerController : MonoBehaviour
 
     void HandlePlayingInputs() 
     {
+        switch (playerState)
+        {
+            case PlayerState.STANDING:
+                speed = 1;
+                if (Input.GetKeyDown(KeyCode.C))
+                {
+                    Crouch();
+                }
+                break;
+            case PlayerState.CROUCHING:
+                speed = 0.5f;
+                if (Input.GetKeyUp(KeyCode.C))
+                {
+                    StandUp();
+                }
+                break;
+        }
+
         // save player pos at the start of the frame
         playerPosStart = transform.position;
 
@@ -80,12 +107,13 @@ public class PlayerController : MonoBehaviour
             if (Input.GetKeyDown(entry.Key))
             {
                 GameManager.instance.redoStack.Clear();
-                ExecuteCommand(entry.Value);
+                
+                ExecuteCommand(entry.Value, speed);
             }
         }
     }
 
-    void ExecuteCommand(MoveCommand commandType)
+    void ExecuteCommand(MoveCommand commandType, float _speed)
     {
         Command command = commandType switch
         {
@@ -98,9 +126,20 @@ public class PlayerController : MonoBehaviour
 
         if (command != null) 
         {
-            command.Execute(transform);
+            command.Execute(transform, _speed);
             GameManager.instance.commandStack.Push(command);
         }
+    }
+
+    void Crouch()
+    {
+        transform.localScale = new Vector3(1, 0.6f, 1);
+        playerState = PlayerState.CROUCHING;
+    }
+    void StandUp()
+    {
+        transform.localScale = new Vector3(1, 1, 1);
+        playerState = PlayerState.STANDING;
     }
 
     void OnCoinCollected(int coinValue)
